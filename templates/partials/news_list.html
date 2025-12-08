@@ -1,0 +1,11 @@
+<ul class="list-group list-group-flush">
+    {% for item in news %}
+    <li class="list-group-item">
+        <a href="{{ item.url }}" target="_blank" class="fw-bold text-decoration-none">{{ item.title }}</a>
+        <p class="small text-muted mb-0">{{ item.source }}</p>
+        <p class="small mb-0">{{ item.summary }}</p>
+    </li>
+    {% else %}
+    <li class="list-group-item">No news available.</li>
+    {% endfor %}
+</ul>

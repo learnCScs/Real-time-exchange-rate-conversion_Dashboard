@@ -1,0 +1,24 @@
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Option</th>
+            <th>Original</th>
+            <th>Cost (CNY)</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for res in results %}
+        <tr class="{{ 'table-success' if res.is_best else '' }}">
+            <td>Option {{ loop.index }}</td>
+            <td>{{ res.amount }} {{ res.currency }}</td>
+            <td>¥{{ res.cny_cost }}</td>
+            <td>
+                {% if res.is_best %}
+                <span class="badge bg-success">Best Price</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

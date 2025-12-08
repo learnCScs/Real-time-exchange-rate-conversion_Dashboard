@@ -1,0 +1,20 @@
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Market</th>
+            <th>Margin</th>
+            <th>Rec. Price (Local)</th>
+            <th>Rec. Price (CNY)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for res in results %}
+        <tr>
+            <td>{{ res.market }}</td>
+            <td>{{ res.margin }}%</td>
+            <td>{{ res.price_local }}</td>
+            <td>¥{{ res.price_cny }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

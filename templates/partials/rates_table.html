@@ -1,0 +1,17 @@
+<table class="table table-sm table-hover">
+    <thead>
+        <tr>
+            <th>Currency</th>
+            <th>Rate (USD Base)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for curr, rate in rates.items() %}
+        <tr>
+            <td>{{ curr }}</td>
+            <td>{{ rate }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<small class="text-muted">Auto-refreshes every 5 mins</small>

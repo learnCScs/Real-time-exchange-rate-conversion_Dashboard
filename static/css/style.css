@@ -1,0 +1,13 @@
+body {
+    font-size: 0.9rem;
+}
+.card-header {
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+}
+.table-sm td, .table-sm th {
+    padding: 0.25rem 0.5rem;
+}
+.form-control-sm, .form-select-sm {
+    font-size: 0.85rem;
+}

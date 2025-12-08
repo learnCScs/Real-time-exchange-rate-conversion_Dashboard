@@ -44,7 +44,7 @@ async def get_history(base: str = Query("USD"), target: str = Query("CNY"), days
     return JSONResponse(content=data)
 
 @app.post("/api/purchase/cost", response_class=HTMLResponse)
-async def calculate_purchase_cost(request: Request, amounts: list[float] = Form(...), currencies: list[str] = Form(...)):
+async def calculate_purchase_cost(request: Request):
     # Note: FastAPI Form list handling might need specific frontend naming like amounts&amounts
     # For simplicity in HTMX, we might receive them differently or parse form data manually if complex.
     # Let's assume simple single item calculation or handle list if possible.
@@ -94,9 +94,15 @@ async def calculate_purchase_cost(request: Request, amounts: list[float] = Form(
     return templates.TemplateResponse("partials/purchase_result.html", {"request": request, "results": results})
 
 @app.post("/api/sale/price", response_class=HTMLResponse)
-async def calculate_sale_price(request: Request, cost_cny: float = Form(...), markets: list[str] = Form(...), margins: list[float] = Form(...)):
+async def calculate_sale_price(request: Request):
     # Similar handling for lists
     form_data = await request.form()
+    
+    try:
+        cost_cny = float(form_data.get("cost_cny", 0))
+    except ValueError:
+        return HTMLResponse("<div class='alert alert-danger'>Invalid Cost</div>")
+
     raw_markets = form_data.getlist("market") # e.g. USD, EUR
     raw_margins = form_data.getlist("margin") # e.g. 20 for 20%
     
@@ -129,7 +135,15 @@ async def calculate_sale_price(request: Request, cost_cny: float = Form(...), ma
     return templates.TemplateResponse("partials/sale_result.html", {"request": request, "results": results})
 
 @app.post("/api/warning/add", response_class=HTMLResponse)
-async def add_warning(request: Request, pair: str = Form(...), threshold: float = Form(...), condition: str = Form(...)):
+async def add_warning(request: Request):
+    form_data = await request.form()
+    pair = form_data.get("pair")
+    condition = form_data.get("condition")
+    try:
+        threshold = float(form_data.get("threshold"))
+    except (TypeError, ValueError):
+        return HTMLResponse("<div class='alert alert-danger'>Invalid Threshold</div>")
+
     # Just log it for now as "Active Warning"
     details = f"Alert when {pair} {condition} {threshold}"
     exchange_service.add_history_record("warning", details)

@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": 1765202960730,
+    "date": "2025-12-08 22:09:20",
+    "type": "sale",
+    "details": {
+      "cost_cny": 12.0,
+      "markets_count": 1
+    }
+  },
+  {
+    "id": 1765202943619,
+    "date": "2025-12-08 22:09:03",
+    "type": "purchase",
+    "details": {
+      "total_options": 2,
+      "best_price_cny": 7.08
+    }
+  },
+  {
+    "id": 1765202757797,
+    "date": "2025-12-08 22:05:57",
+    "type": "warning",
+    "details": "Alert when USD/CNY > 7.3"
+  },
+  {
+    "id": 1765202740980,
+    "date": "2025-12-08 22:05:40",
+    "type": "sale",
+    "details": {
+      "cost_cny": 12.0,
+      "markets_count": 1
+    }
+  },
+  {
+    "id": 1765202737271,
+    "date": "2025-12-08 22:05:37",
+    "type": "purchase",
+    "details": {
+      "total_options": 2,
+      "best_price_cny": 14.16
+    }
+  },
+  {
+    "id": 1765202734146,
+    "date": "2025-12-08 22:05:34",
+    "type": "purchase",
+    "details": {
+      "total_options": 2,
+      "best_price_cny": 8.24
+    }
+  }
+]

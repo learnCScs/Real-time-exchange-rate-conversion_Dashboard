@@ -68,7 +68,7 @@ async def get_history(base: str = Query("USD"), target: str = Query("CNY"), days
     data = await exchange_service.get_historical_data(base, target, days)
     return JSONResponse(content=data)
 
-@app.post("/api/purchase/cost", response_class=HTMLResponse)
+@app.post("/api/purchase/compare", response_class=HTMLResponse)
 async def calculate_purchase_cost(request: Request, lang: str = Depends(get_lang)):
     trans = translations.get(lang, translations["zh"])
     # 注意：FastAPI 表单列表处理可能需要特定的前端命名，如 amounts&amounts

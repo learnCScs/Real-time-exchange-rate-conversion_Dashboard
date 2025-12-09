@@ -2,12 +2,12 @@
     {% for rec in records %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
         <div>
-            <span class="badge bg-secondary">{{ rec.type }}</span>
+            <span class="badge bg-secondary">{{ trans[rec.type] if rec.type in trans else rec.type }}</span>
             <span class="ms-2">{{ rec.details }}</span>
         </div>
         <small class="text-muted">{{ rec.date }}</small>
     </li>
     {% else %}
-    <li class="list-group-item">No records found.</li>
+    <li class="list-group-item">{{ trans['no_records'] }}</li>
     {% endfor %}
 </ul>

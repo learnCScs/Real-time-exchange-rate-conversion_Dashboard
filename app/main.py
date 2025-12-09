@@ -1,42 +1,67 @@
-from fastapi import FastAPI, Request, Form, Query
+from fastapi import FastAPI, Request, Form, Query, Depends, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from app.services.exchange_api import exchange_service
+from app.locales import translations
 import os
 
 app = FastAPI(title="Exchange Rate Dashboard")
 
-# Mount static files
+# 挂载静态文件
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Templates
+# 模板
 templates = Jinja2Templates(directory="templates")
 
-# Common currencies for dropdowns
+# 下拉菜单的常用货币
 CURRENCIES = ["USD", "CNY", "EUR", "GBP", "JPY", "HKD", "AUD", "CAD", "SGD", "CHF", "INR", "RUB", "KRW", "THB", "VND", "MYR", "IDR", "PHP", "TWD", "NZD"]
 
+# 获取语言依赖
+def get_lang(request: Request):
+    return request.cookies.get("lang", "zh")
+
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "currencies": CURRENCIES})
+async def read_root(request: Request, lang: str = Query(None)):
+    # 如果查询参数中有 lang，则设置 cookie
+    response_lang = lang if lang in translations else request.cookies.get("lang", "zh")
+    trans = translations[response_lang]
+    
+    response = templates.TemplateResponse("index.html", {
+        "request": request, 
+        "currencies": CURRENCIES, 
+        "trans": trans,
+        "current_lang": response_lang
+    })
+    if lang:
+        response.set_cookie(key="lang", value=lang)
+    return response
 
 @app.get("/api/realtime", response_class=HTMLResponse)
-async def get_realtime_rates(request: Request):
+async def get_realtime_rates(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
     rates = await exchange_service.get_realtime_rates()
-    # Filter for main currencies to display
+    # 过滤主要货币进行显示
     display_rates = {k: v for k, v in rates.items() if k in CURRENCIES}
-    return templates.TemplateResponse("partials/rates_table.html", {"request": request, "rates": display_rates})
+    return templates.TemplateResponse("partials/rates_table.html", {"request": request, "rates": display_rates, "trans": trans})
+
+@app.get("/api/rates/json")
+async def get_rates_json():
+    rates = await exchange_service.get_realtime_rates()
+    return JSONResponse(content=rates)
 
 @app.post("/api/convert", response_class=HTMLResponse)
-async def convert_currency(request: Request, amount: float = Form(...), from_curr: str = Form(...), to_curr: str = Form(...)):
+async def convert_currency(request: Request, amount: float = Form(...), from_curr: str = Form(...), to_curr: str = Form(...), lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
     rates = await exchange_service.get_realtime_rates()
     result = exchange_service.convert_currency(amount, from_curr, to_curr, rates)
-    return f"<div class='alert alert-success mt-3'>Result: {amount} {from_curr} = <strong>{result} {to_curr}</strong></div>"
+    return f"<div class='alert alert-success mt-3'>{trans['result']}: {amount} {from_curr} = <strong>{result} {to_curr}</strong></div>"
 
 @app.get("/api/news", response_class=HTMLResponse)
-async def get_news(request: Request):
+async def get_news(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
     news = await exchange_service.get_news()
-    return templates.TemplateResponse("partials/news_list.html", {"request": request, "news": news})
+    return templates.TemplateResponse("partials/news_list.html", {"request": request, "news": news, "trans": trans})
 
 @app.get("/api/history")
 async def get_history(base: str = Query("USD"), target: str = Query("CNY"), days: int = Query(30)):
@@ -44,20 +69,21 @@ async def get_history(base: str = Query("USD"), target: str = Query("CNY"), days
     return JSONResponse(content=data)
 
 @app.post("/api/purchase/cost", response_class=HTMLResponse)
-async def calculate_purchase_cost(request: Request):
-    # Note: FastAPI Form list handling might need specific frontend naming like amounts&amounts
-    # For simplicity in HTMX, we might receive them differently or parse form data manually if complex.
-    # Let's assume simple single item calculation or handle list if possible.
-    # Actually, for a dynamic list, it's easier to accept a JSON body or parse raw form.
-    # But HTMX sends form data. Let's simplify: User adds rows, submits form.
-    # We will read form data directly from request for dynamic fields.
+async def calculate_purchase_cost(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
+    # 注意：FastAPI 表单列表处理可能需要特定的前端命名，如 amounts&amounts
+    # 为了在 HTMX 中简化，我们可能会以不同方式接收它们，或者如果复杂则手动解析表单数据。
+    # 让我们假设简单的单项计算或如果可能处理列表。
+    # 实际上，对于动态列表，接受 JSON 正文或解析原始表单更容易。
+    # 但是 HTMX 发送表单数据。让我们简化：用户添加行，提交表单。
+    # 我们将直接从请求中读取表单数据以获取动态字段。
     form_data = await request.form()
     
     items = []
     rates = await exchange_service.get_realtime_rates()
-    cny_rate = rates.get("CNY", 1.0) # Assuming we want cost in CNY
+    cny_rate = rates.get("CNY", 1.0) # 假设我们想要 CNY 的成本
     
-    # Extract lists manually since keys might be 'amount' and 'currency' repeated
+    # 手动提取列表，因为键可能是重复的 'amount' 和 'currency'
     raw_amounts = form_data.getlist("amount")
     raw_currencies = form_data.getlist("currency")
     
@@ -67,7 +93,7 @@ async def calculate_purchase_cost(request: Request):
     for amt, curr in zip(raw_amounts, raw_currencies):
         try:
             val = float(amt)
-            # Convert to USD then to CNY
+            # 先转换为 USD 然后转换为 CNY
             usd_val = val / rates.get(curr, 1.0)
             cny_val = usd_val * cny_rate
             results.append({
@@ -79,32 +105,36 @@ async def calculate_purchase_cost(request: Request):
         except:
             continue
             
-    # Find best (lowest cost) - wait, this logic assumes comparing OPTIONS for the SAME item?
-    # Or summing up a BOM? The prompt says "Compare multiple supplier quotes... highlight lowest".
-    # So it's options.
+    # 找到最佳（最低成本） - 等等，这个逻辑假设比较同一项目的选项？
+    # 还是汇总 BOM？提示说“比较多个供应商报价...高亮最低”。
+    # 所以是选项。
     
     if results:
         min_cost = min(r["cny_cost"] for r in results)
         for r in results:
             r["is_best"] = (r["cny_cost"] == min_cost)
             
-    # Log to history
-    exchange_service.add_history_record("purchase", {"total_options": len(results), "best_price_cny": min_cost if results else 0})
+    # 记录到历史
+    details = f"{trans['total_options']}: {len(results)}, {trans['best_price_cny']}: ¥{min_cost if results else 0}"
+    exchange_service.add_history_record("purchase_cost_compare", details)
 
-    return templates.TemplateResponse("partials/purchase_result.html", {"request": request, "results": results})
+    response = templates.TemplateResponse("partials/purchase_result.html", {"request": request, "results": results, "trans": trans})
+    response.headers["HX-Trigger"] = "historyChanged"
+    return response
 
 @app.post("/api/sale/price", response_class=HTMLResponse)
-async def calculate_sale_price(request: Request):
-    # Similar handling for lists
+async def calculate_sale_price(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
+    # 列表的类似处理
     form_data = await request.form()
     
     try:
         cost_cny = float(form_data.get("cost_cny", 0))
     except ValueError:
-        return HTMLResponse("<div class='alert alert-danger'>Invalid Cost</div>")
+        return HTMLResponse(f"<div class='alert alert-danger'>{trans['invalid_cost']}</div>")
 
-    raw_markets = form_data.getlist("market") # e.g. USD, EUR
-    raw_margins = form_data.getlist("margin") # e.g. 20 for 20%
+    raw_markets = form_data.getlist("market") # 例如 USD, EUR
+    raw_margins = form_data.getlist("margin") # 例如 20 代表 20%
     
     rates = await exchange_service.get_realtime_rates()
     cny_rate = rates.get("CNY", 1.0)
@@ -115,10 +145,10 @@ async def calculate_sale_price(request: Request):
             margin_pct = float(margin) / 100.0
             target_price_cny = cost_cny * (1 + margin_pct)
             
-            # Convert CNY -> USD -> Target Market Currency
+            # 转换 CNY -> USD -> 目标市场货币
             # CNY -> USD
             price_usd = target_price_cny / cny_rate
-            # USD -> Target
+            # USD -> 目标
             price_local = price_usd * rates.get(mkt, 1.0)
             
             results.append({
@@ -130,26 +160,52 @@ async def calculate_sale_price(request: Request):
         except:
             continue
             
-    exchange_service.add_history_record("sale", {"cost_cny": cost_cny, "markets_count": len(results)})
+    # details = f"{trans['cost']}: ¥{cost_cny}, {trans['markets_count']}: {len(results)}"
+    # 构造更详细的记录
+    res_strs = [f"{r['market']} {r['price_local']} ({r['margin']}%)" for r in results]
+    details = f"{trans['cost']} ¥{cost_cny} -> {', '.join(res_strs)}"
+    exchange_service.add_history_record("smart_pricing", details)
     
-    return templates.TemplateResponse("partials/sale_result.html", {"request": request, "results": results})
+    response = templates.TemplateResponse("partials/sale_result.html", {"request": request, "results": results, "trans": trans})
+    response.headers["HX-Trigger"] = "historyChanged"
+    return response
 
 @app.post("/api/warning/add", response_class=HTMLResponse)
-async def add_warning(request: Request):
+async def add_warning(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
     form_data = await request.form()
-    pair = form_data.get("pair")
+    
+    base = form_data.get("base_currency")
+    target = form_data.get("target_currency")
+    
+    if base and target:
+        pair = f"{base}/{target}"
+    else:
+        pair = form_data.get("pair", "USD/CNY")
+
     condition = form_data.get("condition")
     try:
         threshold = float(form_data.get("threshold"))
     except (TypeError, ValueError):
-        return HTMLResponse("<div class='alert alert-danger'>Invalid Threshold</div>")
+        return HTMLResponse(f"<div class='alert alert-danger'>{trans['invalid_threshold']}</div>")
 
-    # Just log it for now as "Active Warning"
-    details = f"Alert when {pair} {condition} {threshold}"
+    # 暂时只记录为“活动预警”
+    details = f"{trans['alert_when']} {pair} {condition} {threshold}"
     exchange_service.add_history_record("warning", details)
-    return f"<div class='alert alert-info'>Warning set: {details}</div>"
+    
+    content = f"<div class='alert alert-info'>{trans['warning_set']}: {details}</div>"
+    return HTMLResponse(content=content, headers={"HX-Trigger": "historyChanged"})
 
 @app.get("/api/settle/history", response_class=HTMLResponse)
-async def get_history_records(request: Request, filter_type: str = Query(None)):
+async def get_history_records(request: Request, filter_type: str = Query(None), lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
     records = exchange_service.get_history_records(filter_type)
-    return templates.TemplateResponse("partials/history_list.html", {"request": request, "records": records})
+    return templates.TemplateResponse("partials/history_list.html", {"request": request, "records": records, "trans": trans})
+
+@app.post("/api/history/clear", response_class=HTMLResponse)
+async def clear_history(request: Request, lang: str = Depends(get_lang)):
+    trans = translations.get(lang, translations["zh"])
+    exchange_service.clear_history_records()
+    response = templates.TemplateResponse("partials/history_list.html", {"request": request, "records": [], "trans": trans})
+    response.headers["HX-Trigger"] = "historyChanged"
+    return response

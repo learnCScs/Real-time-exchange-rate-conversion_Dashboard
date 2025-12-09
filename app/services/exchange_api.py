@@ -14,7 +14,7 @@ HISTORY_RECORDS_FILE = os.path.join(DATA_DIR, "history_records.json")
 EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
 ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 
-# Default fallback rates if everything fails
+# 如果一切失败，使用默认回退汇率
 DEFAULT_RATES = {
     "USD": 1, "CNY": 7.25, "EUR": 0.92, "GBP": 0.79, "JPY": 150.0,
     "HKD": 7.82, "AUD": 1.52, "CAD": 1.36, "SGD": 1.35, "CHF": 0.88
@@ -23,7 +23,7 @@ DEFAULT_RATES = {
 class ExchangeService:
     def __init__(self):
         self.rates_cache = self._load_json(DAILY_RATES_FILE)
-        self.news_cache = {} # In-memory cache for news, or could be persisted if needed
+        self.news_cache = {} # 新闻内存缓存，如果需要也可以持久化
         self.last_news_fetch = 0
 
     def _load_json(self, filepath):
@@ -40,19 +40,19 @@ class ExchangeService:
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"Error saving JSON to {filepath}: {e}")
+            print(f"保存JSON到 {filepath} 错误: {e}")
 
     async def get_realtime_rates(self):
-        # Check cache validity (e.g., 1 hour for free tier optimization, or 5 mins as requested)
-        # The user requested 5 mins refresh.
+        # 检查缓存有效性（例如，免费层优化为1小时，或按请求为5分钟）
+        # 用户请求5分钟刷新。
         now = time.time()
         last_update = self.rates_cache.get("time_last_update_unix", 0)
         
-        # If cache is fresh (less than 5 mins old)
+        # 如果缓存新鲜（小于5分钟）
         if now - last_update < 300 and "conversion_rates" in self.rates_cache:
             return self.rates_cache["conversion_rates"]
 
-        # Fetch from API
+        # 从API获取
         url = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
         try:
             async with httpx.AsyncClient() as client:
@@ -64,30 +64,30 @@ class ExchangeService:
                         self._save_json(DAILY_RATES_FILE, data)
                         return data["conversion_rates"]
         except Exception as e:
-            print(f"API Error: {e}")
+            print(f"API 错误: {e}")
         
-        # Fallback to cache even if old
+        # 即使旧也回退到缓存
         if "conversion_rates" in self.rates_cache:
             return self.rates_cache["conversion_rates"]
             
         return DEFAULT_RATES
 
     async def get_historical_data(self, base="USD", target="CNY", days=30):
-        # ExchangeRate-API free tier might not support time-series endpoint easily or at all for free.
-        # However, the user prompt says "ExchangeRate-API free version (supports querying recent 365 days history)".
-        # Standard free plan usually only gives 'latest'. 
-        # If 'history' endpoint is not available on free plan, we might need to mock it or use the 'latest' data if we had stored it daily.
-        # BUT, assuming the user is correct or we use a workaround. 
-        # Actually, standard free plan often DOES NOT support /history endpoint. 
-        # Let's implement a mock generator based on current rate for demonstration if API fails, 
-        # or try to fetch if the key allows.
-        # For stability in this demo, I will generate realistic fluctuation data based on the current rate.
+        # ExchangeRate-API 免费层可能不容易支持时间序列端点。
+        # 然而，用户提示说“ExchangeRate-API 免费版（支持查询最近365天历史）”。
+        # 标准免费计划通常只提供“最新”。
+        # 如果免费计划不可用“历史”端点，我们可能需要模拟它，或者如果我们每天存储它，则使用“最新”数据。
+        # 但是，假设用户是正确的或我们使用变通方法。
+        # 实际上，标准免费计划通常不支持 /history 端点。
+        # 如果API失败，让我们实现一个基于当前汇率的模拟生成器进行演示，
+        # 或者如果密钥允许，尝试获取。
+        # 为了演示的稳定性，我将根据当前汇率生成逼真的波动数据。
         
         current_rates = await self.get_realtime_rates()
         base_rate = current_rates.get(base, 1.0)
         target_rate = current_rates.get(target, 1.0)
         
-        # Calculate cross rate
+        # 计算交叉汇率
         rate = target_rate / base_rate
         
         dates = []
@@ -97,14 +97,14 @@ class ExchangeService:
         for i in range(days):
             d = datetime.now() - timedelta(days=days-i)
             dates.append(d.strftime("%Y-%m-%d"))
-            # Random fluctuation +/- 2%
+            # 随机波动 +/- 2%
             fluctuation = random.uniform(0.98, 1.02)
             values.append(round(rate * fluctuation, 4))
             
         return {"labels": dates, "data": values, "rate": rate}
 
     async def get_news(self):
-        # 1 hour cache
+        # 1小时缓存
         now = time.time()
         if now - self.last_news_fetch < 3600 and self.news_cache:
             return self.news_cache
@@ -116,7 +116,7 @@ class ExchangeService:
                 if response.status_code == 200:
                     data = response.json()
                     if "feed" in data:
-                        # Take top 5
+                        # 取前5条
                         news_items = []
                         for item in data["feed"][:5]:
                             news_items.append({
@@ -129,7 +129,7 @@ class ExchangeService:
                         self.last_news_fetch = now
                         return news_items
         except Exception as e:
-            print(f"News API Error: {e}")
+            print(f"新闻 API 错误: {e}")
             
         return self.news_cache if self.news_cache else []
 
@@ -137,9 +137,9 @@ class ExchangeService:
         if from_curr not in rates or to_curr not in rates:
             return 0.0
         
-        # Convert to USD first (Base)
+        # 先转换为 USD (基准)
         amount_in_usd = amount / rates[from_curr]
-        # Convert to Target
+        # 转换为目标
         return round(amount_in_usd * rates[to_curr], 6)
 
     def get_history_records(self, filter_type=None):
@@ -156,8 +156,11 @@ class ExchangeService:
             "type": record_type, # 'purchase', 'sale', 'settle', 'warning'
             "details": details
         }
-        records.insert(0, new_record) # Add to top
+        records.insert(0, new_record) # 添加到顶部
         self._save_json(HISTORY_RECORDS_FILE, records)
         return new_record
+
+    def clear_history_records(self):
+        self._save_json(HISTORY_RECORDS_FILE, [])
 
 exchange_service = ExchangeService()

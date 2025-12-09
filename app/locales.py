@@ -50,7 +50,8 @@ translations = {
         "exchange_rate": "Exchange Rate",
         "volatility_label": "7-Day Volatility (%)",
         "clear_history": "Clear History",
-        "history_cleared": "History cleared"
+        "history_cleared": "History cleared",
+        "add_row": "Add Row"
     },
     "zh": {
         "title": "汇率波动看板",
@@ -103,6 +104,7 @@ translations = {
         "exchange_rate": "汇率",
         "volatility_label": "7天波动率 (%)",
         "clear_history": "清除历史",
-        "history_cleared": "历史记录已清除"
+        "history_cleared": "历史记录已清除",
+        "add_row": "添加一行"
     }
 }

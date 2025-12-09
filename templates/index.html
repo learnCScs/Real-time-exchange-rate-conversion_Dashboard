@@ -341,7 +341,8 @@
         const savedTheme = localStorage.getItem('theme') || 'default';
         setTheme(savedTheme);
     })();
-    const SUPPORTED_CURRENCIES = {{ currencies | tojson }};
+    // Parse JSON string to avoid editor syntax errors
+    const SUPPORTED_CURRENCIES = JSON.parse('{{ currencies | tojson | safe }}');
 
     function updateTime() {
         const now = new Date();

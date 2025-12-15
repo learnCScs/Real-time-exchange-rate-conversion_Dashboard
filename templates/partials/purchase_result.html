@@ -1,3 +1,8 @@
+<!-- 
+  采购成本对比结果片段 (purchase_result.html)
+  用于显示不同货币采购方案的成本对比结果。
+  高亮显示最优（最低成本）方案。
+-->
 <table class="table table-bordered mt-3">
     <thead>
         <tr>
@@ -9,6 +14,7 @@
     </thead>
     <tbody>
         {% for res in results %}
+        <!-- 如果是最佳方案，添加绿色背景高亮 -->
         <tr class="{{ 'table-success' if res.is_best else '' }}">
             <td>{{ trans['option'] }} {{ loop.index }}</td>
             <td>{{ res.amount }} {{ res.currency }}</td>

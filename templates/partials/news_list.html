@@ -1,11 +1,20 @@
+<!-- 
+  新闻列表片段 (news_list.html)
+  用于显示最新的外汇市场新闻。
+  由 HTMX 动态加载。
+-->
 <ul class="list-group list-group-flush">
     {% for item in news %}
     <li class="list-group-item">
+        <!-- 新闻标题链接 -->
         <a href="{{ item.url }}" target="_blank" class="fw-bold text-decoration-none">{{ item.title }}</a>
+        <!-- 新闻来源 -->
         <p class="small text-muted mb-0">{{ item.source }}</p>
+        <!-- 新闻摘要 -->
         <p class="small mb-0">{{ item.summary }}</p>
     </li>
     {% else %}
+    <!-- 无新闻时的提示 -->
     <li class="list-group-item">{{ trans['no_news'] }}</li>
     {% endfor %}
 </ul>

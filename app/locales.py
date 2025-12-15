@@ -1,3 +1,5 @@
+# 多语言翻译字典
+# 包含英语 (en) 和中文 (zh) 的所有界面文本
 translations = {
     "en": {
         "title": "Exchange Rate Dashboard",
@@ -103,8 +105,8 @@ translations = {
         "to": "兑换",
         "exchange_rate": "汇率",
         "volatility_label": "7天波动率 (%)",
-        "clear_history": "清除历史",
-        "history_cleared": "历史记录已清除",
+        "clear_history": "清空历史",
+        "history_cleared": "历史已清空",
         "add_row": "添加一行"
     }
 }

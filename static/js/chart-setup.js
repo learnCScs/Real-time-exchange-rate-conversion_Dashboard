@@ -1,18 +1,22 @@
-// Chart.js Setup
+// Chart.js 图表初始化与配置脚本
 
-let historyChart = null;
-let radarChart = null;
+let historyChart = null; // 历史趋势图实例
+let radarChart = null;   // 波动雷达图实例
 
+// 当页面加载完成后执行初始化
 document.addEventListener('DOMContentLoaded', function() {
-    initHistoryChart();
-    initRadarChart();
-    updateMatrix(); // Initial matrix update
+    initHistoryChart(); // 初始化折线图
+    initRadarChart();   // 初始化雷达图
+    updateMatrix();     // 初始化汇率矩阵
 });
 
+/**
+ * 初始化历史趋势折线图
+ */
 function initHistoryChart() {
     const ctx = document.getElementById('historyChart').getContext('2d');
     
-    // Get theme colors
+    // 获取当前主题的颜色变量 (从 CSS 变量中读取)
     const style = getComputedStyle(document.body);
     const primaryColor = style.getPropertyValue('--primary-color').trim() || '#4361ee';
     const primaryRgb = style.getPropertyValue('--primary-rgb').trim() || '67, 97, 238';
@@ -20,57 +24,55 @@ function initHistoryChart() {
     historyChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: [], // X轴标签（日期）
             datasets: [{
                 label: (typeof TRANS !== 'undefined') ? TRANS.exchange_rate : 'Exchange Rate',
-                data: [],
-                borderColor: primaryColor,
-                backgroundColor: `rgba(${primaryRgb}, 0.1)`,
-                tension: 0.3,
-                fill: true
+                data: [], // Y轴数据（汇率）
+                borderColor: primaryColor, // 线条颜色跟随主题
+                backgroundColor: `rgba(${primaryRgb}, 0.1)`, // 填充颜色跟随主题
+                tension: 0.3, // 曲线平滑度
+                fill: true // 填充曲线下方区域
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false } // 隐藏图例
             },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#f0f0f0' } }
+                x: { grid: { display: false } }, // 隐藏X轴网格
+                y: { grid: { color: '#f0f0f0' } } // Y轴网格颜色
             }
         }
     });
     
-    // Expose to window for theme switcher
+    // 将图表实例暴露给全局 window 对象，以便主题切换时可以访问并更新颜色
     window.rateChart = historyChart;
 
-    // Load initial data
+    // 加载初始数据
     updateChart();
 }
 
+/**
+ * 初始化波动率雷达图
+ */
 function initRadarChart() {
     const ctx = document.getElementById('radarChart').getContext('2d');
     
-    // Get theme colors
+    // 获取当前主题颜色
     const style = getComputedStyle(document.body);
     const primaryColor = style.getPropertyValue('--primary-color').trim() || '#4361ee';
     const primaryRgb = style.getPropertyValue('--primary-rgb').trim() || '67, 97, 238';
     
-    // Create Gradient
-    // Note: Chart.js radar charts center at (width/2, height/2), but gradients are relative to canvas 0,0 usually unless configured.
-    // For simplicity in Chart.js, a simple background color with opacity is often safer, 
-    // but let's try a solid fill with a nice border and circular grid first.
-    
-    // Mock data for volatility
+    // 模拟的波动率数据
     radarChart = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['USD', 'EUR', 'JPY', 'GBP', 'AUD'],
+            labels: ['USD', 'EUR', 'JPY', 'GBP', 'AUD'], // 雷达图的五个维度
             datasets: [{
                 label: (typeof TRANS !== 'undefined') ? TRANS.volatility_label : '7-Day Volatility (%)',
-                data: [0.5, 0.8, 1.2, 0.6, 0.9],
+                data: [0.5, 0.8, 1.2, 0.6, 0.9], // 模拟数据
                 fill: true,
                 backgroundColor: `rgba(${primaryRgb}, 0.2)`,
                 borderColor: primaryColor,
@@ -80,7 +82,7 @@ function initRadarChart() {
                 pointBorderWidth: 2,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                tension: 0.3 // Smooth curves
+                tension: 0.3 // 平滑曲线
             }]
         },
         options: {
@@ -89,6 +91,7 @@ function initRadarChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    // 自定义提示框样式
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     titleColor: '#1e293b',
                     bodyColor: '#475569',
@@ -112,7 +115,7 @@ function initRadarChart() {
                     },
                     grid: {
                         color: 'rgba(0,0,0,0.05)',
-                        circular: true // Circular grid
+                        circular: true // 使用圆形网格
                     },
                     pointLabels: {
                         font: {
@@ -136,10 +139,14 @@ function initRadarChart() {
         }
     });
 
-    // Expose to window for theme switcher
+    // 暴露给全局，供主题切换使用
     window.radarChart = radarChart;
 }
 
+/**
+ * 更新历史趋势图表数据
+ * 根据用户选择的基准货币和目标货币，从后端 API 获取数据
+ */
 function updateChart() {
     const base = document.getElementById('chart-base').value;
     const target = document.getElementById('chart-target').value;
@@ -152,11 +159,15 @@ function updateChart() {
             historyChart.data.datasets[0].label = `${base}/${target}`;
             historyChart.update();
             
-            // Also update matrix if relevant
+            // 同时更新矩阵（如果需要）
             updateMatrix();
         });
 }
 
+/**
+ * 更新人民币汇率矩阵
+ * 计算主要货币对人民币的汇率
+ */
 function updateMatrix() {
     fetch('/api/rates/json')
         .then(response => response.json())
@@ -167,14 +178,14 @@ function updateMatrix() {
             
             tbody.innerHTML = '';
             
-            // Use SUPPORTED_CURRENCIES if available, otherwise fallback
+            // 使用全局定义的货币列表，如果没有则使用默认列表
             const currencies = (typeof SUPPORTED_CURRENCIES !== 'undefined') ? SUPPORTED_CURRENCIES : ['USD', 'EUR', 'JPY', 'GBP'];
             
             currencies.forEach(curr => {
-                if (curr === 'CNY') return; // Skip CNY/CNY
+                if (curr === 'CNY') return; // 跳过 CNY/CNY
                 
-                // Calculate Rate: X/CNY = (USD/CNY) / (USD/X)
-                // rates[curr] is USD/X
+                // 计算交叉汇率: X/CNY = (USD/CNY) / (USD/X)
+                // rates[curr] 是 USD/X
                 let rateText = '-';
                 if (rates[curr]) {
                     const val = cny / rates[curr];

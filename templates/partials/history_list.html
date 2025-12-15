@@ -1,13 +1,22 @@
+<!-- 
+  历史记录列表片段 (history_list.html)
+  用于显示用户的操作历史记录。
+  由 HTMX 动态加载。
+-->
 <ul class="list-group">
     {% for rec in records %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
         <div>
+            <!-- 记录类型徽章 -->
             <span class="badge bg-secondary">{{ trans[rec.type] if rec.type in trans else rec.type }}</span>
+            <!-- 记录详情 -->
             <span class="ms-2">{{ rec.details }}</span>
         </div>
+        <!-- 记录时间 -->
         <small class="text-muted">{{ rec.date }}</small>
     </li>
     {% else %}
+    <!-- 无记录时的提示 -->
     <li class="list-group-item">{{ trans['no_records'] }}</li>
     {% endfor %}
 </ul>

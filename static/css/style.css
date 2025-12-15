@@ -1,5 +1,9 @@
+/* 
+ * 全局 CSS 变量定义
+ * 用于实现主题切换功能
+ */
 :root {
-    /* Default Theme (Blue) */
+    /* 默认主题 (蓝色系) */
     --primary-color: #4361ee;
     --primary-rgb: 67, 97, 238;
     --secondary-color: #3f37c9;
@@ -16,42 +20,52 @@
     --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Themes */
+/* 
+ * 主题定义
+ * 通过 data-theme 属性切换不同的颜色变量
+ */
+
+/* 翡翠绿主题 */
 [data-theme="emerald"] {
     --primary-color: #10b981;
     --primary-rgb: 16, 185, 129;
     --secondary-color: #059669;
-    --light-bg: #ecfdf5; /* Slight green tint */
+    --light-bg: #ecfdf5; /* 浅绿色背景 */
 }
 
+/* 宝石红主题 */
 [data-theme="ruby"] {
     --primary-color: #e63946;
     --primary-rgb: 230, 57, 70;
     --secondary-color: #d62828;
-    --light-bg: #fef2f2; /* Slight red tint */
+    --light-bg: #fef2f2; /* 浅红色背景 */
 }
 
+/* 琥珀黄主题 */
 [data-theme="amber"] {
     --primary-color: #f59e0b;
     --primary-rgb: 245, 158, 11;
     --secondary-color: #d97706;
-    --light-bg: #fffbeb; /* Slight yellow tint */
+    --light-bg: #fffbeb; /* 浅黄色背景 */
 }
 
+/* 紫水晶主题 */
 [data-theme="amethyst"] {
     --primary-color: #7209b7;
     --primary-rgb: 114, 9, 183;
     --secondary-color: #560bad;
-    --light-bg: #f3e8ff; /* Slight purple tint */
+    --light-bg: #f3e8ff; /* 浅紫色背景 */
 }
 
+/* 板岩灰主题 */
 [data-theme="slate"] {
     --primary-color: #334155;
     --primary-rgb: 51, 65, 85;
     --secondary-color: #1e293b;
-    --light-bg: #f1f5f9; /* Slight gray tint */
+    --light-bg: #f1f5f9; /* 浅灰色背景 */
 }
 
+/* 基础样式 */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: var(--light-bg);
@@ -59,7 +73,7 @@ body {
     font-size: 0.9rem;
 }
 
-/* Navbar */
+/* 导航栏样式 */
 .custom-navbar {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     box-shadow: var(--box-shadow);
@@ -70,7 +84,7 @@ body {
     letter-spacing: -0.5px;
 }
 
-/* Cards */
+/* 卡片组件样式 */
 .card {
     background-color: var(--card-bg);
     border-radius: var(--border-radius);
@@ -78,6 +92,7 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* 卡片悬停效果 */
 .hover-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--hover-shadow) !important;
@@ -90,7 +105,7 @@ body {
     padding: 1rem 1.25rem;
 }
 
-/* Forms & Inputs */
+/* 表单与输入框样式 */
 .form-control, .form-select {
     border-radius: 8px;
     border: 1px solid rgba(var(--primary-rgb), 0.4);
@@ -113,6 +128,7 @@ body {
     color: var(--primary-color);
 }
 
+/* 按钮样式 */
 .btn {
     border-radius: 8px;
     font-weight: 500;
@@ -129,7 +145,7 @@ body {
     border-color: var(--secondary-color);
 }
 
-/* Fixed Color Button (Does not change with theme) */
+/* 固定颜色的按钮 (不随主题变化) */
 .btn-fixed-primary {
     background-color: #4361ee !important;
     border-color: #4361ee !important;
@@ -142,7 +158,7 @@ body {
     color: #ffffff !important;
 }
 
-/* Tables */
+/* 表格样式 */
 .table-sm td, .table-sm th {
     padding: 0.5rem;
     vertical-align: middle;
@@ -152,7 +168,7 @@ body {
     background-color: rgba(var(--primary-rgb), 0.05);
 }
 
-/* Custom Scrollbar */
+/* 自定义滚动条 */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
 }
@@ -171,18 +187,18 @@ body {
     background: #a8a8a8;
 }
 
-/* Utilities */
+/* 工具类 */
 .text-primary { color: var(--primary-color) !important; }
-.text-success { color: #10b981 !important; } /* Greenish */
+.text-success { color: #10b981 !important; } /* 绿色 */
 .text-info { color: var(--info-color) !important; }
-.text-warning { color: #f59e0b !important; } /* Amber */
+.text-warning { color: #f59e0b !important; } /* 琥珀色 */
 .text-danger { color: var(--warning-color) !important; }
 
 .bg-light {
     background-color: #f8f9fa !important;
 }
 
-/* Animations */
+/* 动画效果 */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -192,7 +208,7 @@ body {
     animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Card Themes */
+/* 卡片主题装饰 (顶部彩色边框) */
 .card-theme-primary {
     border-top: 4px solid var(--primary-color);
     background: linear-gradient(to bottom, rgba(var(--primary-rgb), 0.15), #ffffff 60%);

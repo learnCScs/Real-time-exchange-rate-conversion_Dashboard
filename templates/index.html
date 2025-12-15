@@ -1,33 +1,56 @@
 <!DOCTYPE html>
+<!-- 
+  主页面模板 (index.html)
+  
+  功能概述:
+  1. 这是应用的主入口页面，包含所有核心功能的 UI 布局。
+  2. 使用 Bootstrap 5 进行响应式布局 (Grid System)。
+  3. 使用 HTMX 实现局部页面刷新和异步数据加载，无需编写大量 AJAX 代码。
+  4. 集成了 Chart.js 用于数据可视化 (折线图和雷达图)。
+  5. 支持多语言 (i18n) 和多主题切换。
+-->
 <html lang="{{ current_lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ trans['title'] }}</title>
-    <!-- Google Fonts -->
+    
+    <!-- Google Fonts: Inter 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
+    
+    <!-- Font Awesome: 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Bootstrap 5 CSS -->
+    
+    <!-- Bootstrap 5 CSS: 基础 UI 框架 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    
+    <!-- Custom CSS: 自定义样式 (带版本号防止缓存) -->
     <link href="/static/css/style.css?v={{ range(1, 10000) | random }}" rel="stylesheet">
-    <!-- HTMX -->
+    
+    <!-- HTMX: 前端交互库 -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <!-- Chart.js (Use local path if downloaded, CDN for demo) -->
+    
+    <!-- Chart.js: 图表库 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
 
+<!-- 
+  导航栏区域 
+  包含 Logo、时间显示、主题切换器和语言切换器
+-->
 <nav class="navbar navbar-expand-lg navbar-dark custom-navbar mb-4 shadow-sm">
     <div class="container-fluid">
+        <!-- Logo -->
         <a class="navbar-brand fw-bold" href="#">
             <i class="fa-solid fa-chart-line me-2"></i>{{ trans['title'] }}
         </a>
+        
         <div class="d-flex align-items-center">
+            <!-- 当前时间显示 (JS 更新) -->
             <div id="current-time" class="text-white me-3 small d-none d-md-block opacity-75"></div>
             
-            <!-- Theme Switcher -->
+            <!-- 主题切换下拉菜单 -->
             <div class="dropdown me-2">
                 <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="themeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fa-solid fa-palette"></i>
@@ -42,6 +65,7 @@
                 </ul>
             </div>
 
+            <!-- 语言切换按钮组 -->
             <div class="btn-group">
                 <a href="/?lang=en" class="btn btn-sm btn-outline-light {{ 'active' if current_lang == 'en' else '' }}">EN</a>
                 <a href="/?lang=zh" class="btn btn-sm btn-outline-light {{ 'active' if current_lang == 'zh' else '' }}">中文</a>
@@ -50,11 +74,22 @@
     </div>
 </nav>
 
+<!-- 
+  主内容区域
+  使用 Bootstrap Grid 分为三列布局:
+  1. 左列 (col-md-3): 实时汇率列表、市场新闻
+  2. 中列 (col-md-6): 历史趋势图、波动雷达图、汇率矩阵
+  3. 右列 (col-md-3): 快速换算、成本对比、智能定价、预警设置、历史记录
+-->
 <div class="container-fluid">
     <div class="row">
-        <!-- Left Column: Rates, Converter, News -->
+        <!-- 左侧栏 -->
         <div class="col-md-3">
-            <!-- Realtime Rates -->
+            <!-- 
+              实时汇率卡片
+              使用 hx-get 定时轮询 /api/realtime 接口更新内容
+              hx-trigger="load, every 300s": 页面加载时触发，之后每300秒触发一次
+            -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-primary">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-globe me-2 text-primary"></i>{{ trans['realtime_rates'] }}
@@ -62,6 +97,7 @@
                 <div class="card-body p-0 custom-scrollbar" style="max-height: 400px; overflow-y: auto;"
                      hx-get="/api/realtime" 
                      hx-trigger="load, every 300s">
+                    <!-- 加载状态提示 -->
                     <div class="text-center p-4 text-muted">
                         <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
                         <div>{{ trans['loading_rates'] }}</div>
@@ -69,7 +105,10 @@
                 </div>
             </div>
 
-            <!-- News -->
+            <!-- 
+              市场新闻卡片
+              定时轮询 /api/news 接口
+            -->
             <div class="card border-0 shadow-sm hover-card card-theme-info">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-newspaper me-2 text-info"></i>{{ trans['market_news'] }}
@@ -82,12 +121,13 @@
             </div>
         </div>
 
-        <!-- Middle Column: Charts -->
+        <!-- 中间栏: 图表展示 -->
         <div class="col-md-6">
-            <!-- History Chart -->
+            <!-- 历史趋势折线图 -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-primary">
                 <div class="card-header bg-transparent border-0 fw-bold py-3 d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-chart-area me-2 text-primary"></i>{{ trans['history_trend'] }}</span>
+                    <!-- 图表控制表单 -->
                     <form id="chart-controls" class="d-flex gap-2">
                         <select id="chart-base" class="form-select form-select-sm border-0 bg-light fw-bold" style="width: 80px;">
                             {% for c in currencies %}
@@ -109,9 +149,10 @@
                 </div>
             </div>
 
-            <!-- Radar & Matrix -->
+            <!-- 下方两列布局: 雷达图和矩阵 -->
             <div class="row">
                 <div class="col-md-6">
+                    <!-- 波动率雷达图 -->
                     <div class="card border-0 shadow-sm mb-4 hover-card card-theme-danger">
                         <div class="card-header bg-transparent border-0 fw-bold py-3">
                             <i class="fa-solid fa-bullseye me-2 text-danger"></i>{{ trans['volatility_radar'] }}
@@ -122,12 +163,12 @@
                     </div>
                 </div>
                 <div class="col-md-6">
+                    <!-- 汇率矩阵表 -->
                     <div class="card border-0 shadow-sm mb-4 hover-card card-theme-warning">
                         <div class="card-header bg-transparent border-0 fw-bold py-3">
                             <i class="fa-solid fa-table-cells me-2 text-warning"></i>{{ trans['cny_matrix'] }}
                         </div>
                         <div class="card-body p-0">
-                            <!-- Simple static matrix for demo, or could be dynamic -->
                             <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                                 <table class="table table-hover table-striped mb-0 text-center" style="font-size: 0.85rem;">
                                     <thead class="table-light sticky-top">
@@ -137,7 +178,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="matrix-body">
-                                        <!-- Dynamic content -->
+                                        <!-- 内容由 JS 动态填充 -->
                                     </tbody>
                                 </table>
                             </div>
@@ -147,9 +188,12 @@
             </div>
         </div>
 
-        <!-- Right Column: Tools -->
+        <!-- 右侧栏: 工具箱 -->
         <div class="col-md-3">
-            <!-- Converter -->
+            <!-- 
+              快速换算器
+              使用 hx-post 提交表单，并将结果渲染到 #convert-result 容器中
+            -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-success">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-calculator me-2 text-success"></i>{{ trans['quick_convert'] }}
@@ -178,7 +222,7 @@
                 </div>
             </div>
 
-            <!-- Purchase Cost Compare -->
+            <!-- 采购成本对比工具 -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-success">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-scale-balanced me-2 text-success"></i>{{ trans['purchase_cost_compare'] }}
@@ -186,6 +230,7 @@
                 <div class="card-body p-3">
                     <form hx-post="/api/purchase/compare" hx-target="#purchase-result">
                         <div id="purchase-rows">
+                            <!-- 默认显示两行输入框 -->
                             <div class="input-group mb-2">
                                 <input type="number" name="amount" class="form-control form-control-sm bg-light border-0" placeholder="{{ trans['amount'] }}">
                                 <select name="currency" class="form-select form-select-sm bg-light border-0 fw-bold" style="max-width: 80px;">
@@ -214,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- Sale Pricing -->
+            <!-- 智能定价工具 -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-info">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-tags me-2 text-info"></i>{{ trans['smart_pricing'] }}
@@ -243,7 +288,7 @@
                 </div>
             </div>
 
-            <!-- Warning -->
+            <!-- 汇率预警设置 -->
             <div class="card mb-4 border-0 shadow-sm hover-card card-theme-warning">
                 <div class="card-header bg-transparent border-0 fw-bold py-3">
                     <i class="fa-solid fa-bell me-2 text-warning"></i>{{ trans['set_alert'] }}
@@ -276,7 +321,10 @@
                 </div>
             </div>
 
-            <!-- History Log -->
+            <!-- 
+              历史操作记录
+              监听自定义事件 historyChanged (由后端触发) 来自动刷新列表
+            -->
             <div class="card border-0 shadow-sm hover-card card-theme-purple">
                 <div class="card-header bg-transparent border-0 fw-bold py-3 d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i>{{ trans['history_log'] }}</span>
@@ -294,15 +342,19 @@
     </div>
 </div>
 
-<!-- Scripts -->
+<!-- 页面脚本 -->
 <script>
+    // 将后端传递的翻译文本暴露给 JS 使用
     const TRANS = {
         exchange_rate: "{{ trans['exchange_rate'] }}",
         volatility_label: "{{ trans['volatility_label'] }}",
         amount: "{{ trans['amount'] }}"
     };
 
-    // Theme Switcher Logic
+    /**
+     * 主题切换逻辑
+     * @param {string} themeName - 主题名称 (emerald, ruby, amber, etc.)
+     */
     function setTheme(themeName) {
         if (themeName === 'default') {
             document.documentElement.removeAttribute('data-theme');
@@ -311,12 +363,15 @@
         }
         localStorage.setItem('theme', themeName);
         
-        // Update chart colors if chart exists
+        // 切换主题时同时更新图表颜色
         if (window.rateChart) {
             updateChartColors();
         }
     }
 
+    /**
+     * 更新图表颜色以匹配当前主题
+     */
     function updateChartColors() {
         const style = getComputedStyle(document.body);
         const primaryColor = style.getPropertyValue('--primary-color').trim();
@@ -336,17 +391,20 @@
         }
     }
 
-    // Initialize Theme
+    // 初始化主题 (从本地存储读取)
     (function() {
         const savedTheme = localStorage.getItem('theme') || 'default';
         setTheme(savedTheme);
     })();
-    // Parse JSON string to avoid editor syntax errors
+
+    // 解析后端传递的货币列表
     const SUPPORTED_CURRENCIES = JSON.parse('{{ currencies | tojson | safe }}');
 
+    /**
+     * 更新页面顶部的时间显示
+     */
     function updateTime() {
         const now = new Date();
-        // Format: YYYY-MM-DD HH:MM:SS
         const timeString = now.toLocaleString('zh-CN', { hour12: false }); 
         const el = document.getElementById('current-time');
         if(el) el.innerText = timeString;
@@ -354,7 +412,9 @@
     setInterval(updateTime, 1000);
     updateTime();
 
-    // Add Purchase Row
+    /**
+     * 动态添加采购成本对比行
+     */
     function addPurchaseRow() {
         const container = document.getElementById('purchase-rows');
         const div = document.createElement('div');
@@ -371,8 +431,10 @@
         container.appendChild(div);
     }
 </script>
-<!-- Bootstrap Bundle with Popper -->
+
+<!-- Bootstrap Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 自定义图表初始化脚本 -->
 <script src="/static/js/chart-setup.js?v={{ range(1, 10000) | random }}"></script>
 </body>
 </html>

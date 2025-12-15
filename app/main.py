@@ -19,10 +19,18 @@ CURRENCIES = ["USD", "CNY", "EUR", "GBP", "JPY", "HKD", "AUD", "CAD", "SGD", "CH
 
 # 获取语言依赖
 def get_lang(request: Request):
+    """
+    从请求的 Cookie 中获取语言设置。
+    如果 Cookie 中没有设置语言，默认返回 'zh' (中文)。
+    """
     return request.cookies.get("lang", "zh")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, lang: str = Query(None)):
+    """
+    首页路由。
+    渲染 index.html 模板，并根据查询参数或 Cookie 设置语言。
+    """
     # 如果查询参数中有 lang，则设置 cookie
     response_lang = lang if lang in translations else request.cookies.get("lang", "zh")
     trans = translations[response_lang]
@@ -39,6 +47,10 @@ async def read_root(request: Request, lang: str = Query(None)):
 
 @app.get("/api/realtime", response_class=HTMLResponse)
 async def get_realtime_rates(request: Request, lang: str = Depends(get_lang)):
+    """
+    获取实时汇率数据的 HTML 片段。
+    用于 HTMX 局部刷新汇率表格。
+    """
     trans = translations.get(lang, translations["zh"])
     rates = await exchange_service.get_realtime_rates()
     # 过滤主要货币进行显示
@@ -47,11 +59,19 @@ async def get_realtime_rates(request: Request, lang: str = Depends(get_lang)):
 
 @app.get("/api/rates/json")
 async def get_rates_json():
+    """
+    获取实时汇率数据的 JSON 格式。
+    用于前端图表或其他需要原始数据的场景。
+    """
     rates = await exchange_service.get_realtime_rates()
     return JSONResponse(content=rates)
 
 @app.post("/api/convert", response_class=HTMLResponse)
 async def convert_currency(request: Request, amount: float = Form(...), from_curr: str = Form(...), to_curr: str = Form(...), lang: str = Depends(get_lang)):
+    """
+    货币转换计算。
+    接收金额、源货币、目标货币，返回计算结果的 HTML 片段。
+    """
     trans = translations.get(lang, translations["zh"])
     rates = await exchange_service.get_realtime_rates()
     result = exchange_service.convert_currency(amount, from_curr, to_curr, rates)
@@ -59,17 +79,29 @@ async def convert_currency(request: Request, amount: float = Form(...), from_cur
 
 @app.get("/api/news", response_class=HTMLResponse)
 async def get_news(request: Request, lang: str = Depends(get_lang)):
+    """
+    获取市场新闻的 HTML 片段。
+    用于 HTMX 局部刷新新闻列表。
+    """
     trans = translations.get(lang, translations["zh"])
     news = await exchange_service.get_news()
     return templates.TemplateResponse("partials/news_list.html", {"request": request, "news": news, "trans": trans})
 
 @app.get("/api/history")
 async def get_history(base: str = Query("USD"), target: str = Query("CNY"), days: int = Query(30)):
+    """
+    获取历史汇率数据的 JSON 格式。
+    用于前端绘制历史趋势图表。
+    """
     data = await exchange_service.get_historical_data(base, target, days)
     return JSONResponse(content=data)
 
 @app.post("/api/purchase/compare", response_class=HTMLResponse)
 async def calculate_purchase_cost(request: Request, lang: str = Depends(get_lang)):
+    """
+    采购成本比较计算。
+    接收多个供应商的报价（金额和货币），统一换算成人民币进行比较，找出最低价。
+    """
     trans = translations.get(lang, translations["zh"])
     # 注意：FastAPI 表单列表处理可能需要特定的前端命名，如 amounts&amounts
     # 为了在 HTMX 中简化，我们可能会以不同方式接收它们，或者如果复杂则手动解析表单数据。
@@ -124,6 +156,10 @@ async def calculate_purchase_cost(request: Request, lang: str = Depends(get_lang
 
 @app.post("/api/sale/price", response_class=HTMLResponse)
 async def calculate_sale_price(request: Request, lang: str = Depends(get_lang)):
+    """
+    智能定价计算。
+    根据成本（CNY）和目标市场的利润率，计算出在不同市场的建议售价（当地货币）。
+    """
     trans = translations.get(lang, translations["zh"])
     # 列表的类似处理
     form_data = await request.form()
@@ -172,6 +208,10 @@ async def calculate_sale_price(request: Request, lang: str = Depends(get_lang)):
 
 @app.post("/api/warning/add", response_class=HTMLResponse)
 async def add_warning(request: Request, lang: str = Depends(get_lang)):
+    """
+    添加汇率预警。
+    设置当汇率达到特定阈值时的提醒（目前仅记录到历史记录中）。
+    """
     trans = translations.get(lang, translations["zh"])
     form_data = await request.form()
     
@@ -198,12 +238,19 @@ async def add_warning(request: Request, lang: str = Depends(get_lang)):
 
 @app.get("/api/settle/history", response_class=HTMLResponse)
 async def get_history_records(request: Request, filter_type: str = Query(None), lang: str = Depends(get_lang)):
+    """
+    获取用户的操作历史记录 HTML 片段。
+    支持按类型筛选（如：计算记录、预警记录）。
+    """
     trans = translations.get(lang, translations["zh"])
     records = exchange_service.get_history_records(filter_type)
     return templates.TemplateResponse("partials/history_list.html", {"request": request, "records": records, "trans": trans})
 
 @app.post("/api/history/clear", response_class=HTMLResponse)
 async def clear_history(request: Request, lang: str = Depends(get_lang)):
+    """
+    清空所有历史记录。
+    """
     trans = translations.get(lang, translations["zh"])
     exchange_service.clear_history_records()
     response = templates.TemplateResponse("partials/history_list.html", {"request": request, "records": [], "trans": trans})

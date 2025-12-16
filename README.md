@@ -112,6 +112,10 @@ pip install -r requirements.txt
 
 ### 4. 启动服务
 
+#### 方式一：一键启动脚本 (推荐)
+双击项目根目录下的 `start.bat` 脚本，即可自动启动服务并打开浏览器。
+
+#### 方式二：命令行启动
 ```bash
 uvicorn app.main:app --reload
 ```

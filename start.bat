@@ -26,10 +26,16 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: 3. Optional: Check/Install dependencies
-:: Uncomment the lines below if you want to auto-install dependencies
-:: echo [INFO] Checking dependencies...
-:: pip install -r requirements.txt >nul 2>&1
+:: 3. Check/Install dependencies
+if exist requirements.txt (
+    echo [INFO] Installing dependencies (this may take a while on first run)...
+    python -m pip install -r requirements.txt
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install dependencies.
+        pause
+        exit /b 1
+    )
+)
 
 :: 4. Open Browser (Async)
 echo [INFO] Opening browser...

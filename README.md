@@ -74,22 +74,12 @@ python --version
 # Python 3.9.x
 ```
 
-### 2. 克隆项目与安装依赖
+### 2. 克隆项目
 
 ```bash
 # 克隆仓库
 git clone https://github.com/EcreekLin/Exchange_rate_dashboard.git
 cd Exchange_rate_dashboard
-
-# (可选) 创建虚拟环境
-python -m venv venv
-# Windows 激活
-.\venv\Scripts\activate
-# macOS/Linux 激活
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
 ```
 
 ### 3. 配置文件设置
@@ -113,10 +103,18 @@ pip install -r requirements.txt
 ### 4. 启动服务
 
 #### 方式一：一键启动脚本 (推荐)
-双击项目根目录下的 `start.bat` 脚本，即可自动启动服务并打开浏览器。
+双击项目根目录下的 `start.bat` 脚本。
+- 脚本会自动检测并安装所需的 Python 依赖。
+- 启动成功后会自动打开浏览器访问系统。
 
 #### 方式二：命令行启动
+如果您更喜欢手动控制，可以按以下步骤操作：
+
 ```bash
+# 安装依赖
+pip install -r requirements.txt
+
+# 启动服务
 uvicorn app.main:app --reload
 ```
 

@@ -235,8 +235,7 @@ async def add_warning(request: Request, lang: str = Depends(get_lang)):
     
     content = f"<div class='alert alert-info'>{trans['warning_set']}: {details}</div>"
     return HTMLResponse(content=content, headers={"HX-Trigger": "historyChanged"})
-
-@app.get("/api/settle/history", response_class=HTMLResponse)
+i/settle/history", response_class=HTMLResponse)
 async def get_history_records(request: Request, filter_type: str = Query(None), lang: str = Depends(get_lang)):
     """
     获取用户的操作历史记录 HTML 片段。
@@ -256,3 +255,5 @@ async def clear_history(request: Request, lang: str = Depends(get_lang)):
     response = templates.TemplateResponse("partials/history_list.html", {"request": request, "records": [], "trans": trans})
     response.headers["HX-Trigger"] = "historyChanged"
     return response
+
+@app.get("/ap

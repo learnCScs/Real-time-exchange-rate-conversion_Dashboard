@@ -122,7 +122,7 @@ class ExchangeService:
             d = datetime.now() - timedelta(days=days-i)
             dates.append(d.strftime("%Y-%m-%d"))
             # 随机波动 +/- 2%
-            fluctuation = random.uniform(0.98, 1.02)
+            fluctuation = random.uniform(0.995, 1.005)
             values.append(round(rate * fluctuation, 4))
             
         return {"labels": dates, "data": values, "rate": rate}

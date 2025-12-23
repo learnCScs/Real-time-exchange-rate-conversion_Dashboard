@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 title Exchange Rate Dashboard Launcher
 
 echo ===================================================
@@ -18,34 +18,75 @@ pause
 exit /b 1
 
 :check_python
-:: 2. Check if Python is installed
-python --version >nul 2>&1
-if %errorlevel% equ 0 goto install_deps
-echo [ERROR] Python is not installed or not in PATH.
-echo Please install Python and add it to your PATH.
-pause
-exit /b 1
+set "PYTHON_CMD=python"
+
+:: Check local runtime
+if exist "python_runtime\python.exe" (
+    echo [INFO] Using local portable Python runtime.
+    set "PYTHON_CMD=python_runtime\python.exe"
+    goto install_deps
+)
+
+:: Check system python
+python -c "import sys; exit(0) if sys.version_info >= (3, 8) else exit(1)" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] System Python 3.8+ detected.
+    goto install_deps
+)
+
+:: Check py launcher
+py -3 -c "import sys; exit(0) if sys.version_info >= (3, 8) else exit(1)" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] Python 3.8+ detected via py launcher.
+    set "PYTHON_CMD=py -3"
+    goto install_deps
+)
+
+:: Download portable python
+echo [WARN] No suitable Python 3.8+ found.
+echo [INFO] Downloading Portable Python 3.10...
+if not exist "python_runtime" mkdir "python_runtime"
+
+echo   - Downloading zip...
+powershell -Command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip' -OutFile 'python_runtime\python.zip' }"
+if not exist "python_runtime\python.zip" (
+    echo [ERROR] Download failed. Please check internet connection.
+    pause
+    exit /b 1
+)
+
+echo   - Extracting...
+powershell -Command "& { Expand-Archive -Path 'python_runtime\python.zip' -DestinationPath 'python_runtime' -Force }"
+del "python_runtime\python.zip"
+
+echo   - Configuring...
+powershell -Command "& { $pth = Get-ChildItem 'python_runtime\*._pth'; $c = Get-Content $pth; $c | ForEach-Object { if ($_ -match '#import site') { 'import site' } else { $_ } } | Set-Content $pth }"
+
+echo   - Installing pip...
+powershell -Command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.py' -OutFile 'python_runtime\get-pip.py' }"
+"python_runtime\python.exe" "python_runtime\get-pip.py" --no-warn-script-location
+del "python_runtime\get-pip.py"
+
+set "PYTHON_CMD=python_runtime\python.exe"
 
 :install_deps
-:: 3. Check/Install dependencies
 if not exist requirements.txt goto start_server
 echo [INFO] Installing dependencies...
-python -m pip install -r requirements.txt
-if %errorlevel% equ 0 goto start_server
-echo [ERROR] Failed to install dependencies.
-echo Please check your internet connection or python environment.
-pause
-exit /b 1
+!PYTHON_CMD! -m pip install -r requirements.txt
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install dependencies.
+    echo Please check your internet connection.
+    pause
+    exit /b 1
+)
 
 :start_server
-:: 4. Open Browser (Async)
 echo [INFO] Opening browser...
 start /b cmd /c "timeout /t 3 /nobreak >nul & start http://127.0.0.1:8000"
 
-:: 5. Start Server
 echo [INFO] Starting FastAPI server...
 echo.
-python -m uvicorn app.main:app --reload
+!PYTHON_CMD! -m uvicorn app.main:app --reload
 
 if %errorlevel% neq 0 (
     echo.

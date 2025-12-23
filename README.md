@@ -53,7 +53,6 @@
 
 - **后端 (Backend)**: 
     - **Python FastAPI**: 提供高性能的异步 API 服务。
-    - **Pydantic**: 确保数据交互的类型安全。
     - **HTTPX**: 异步 HTTP 客户端，用于非阻塞地请求外部汇率接口。
 - **前端 (Frontend)**:
     - **Jinja2**: 服务端模板渲染，SEO 友好。
